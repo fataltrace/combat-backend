@@ -1,17 +1,53 @@
 import fastify from 'fastify'
 import fastifyStaticPlugin from 'fastify-static'
+import fastifyWebSocketPlugin from 'fastify-websocket'
 import config from './config.js'
 
 const fastifyServer = fastify({
-    logger: config.logger
+    logger: config.logger,
+    /**
+     http2: true,
+     https: {
+       key: config.sslKey,
+       cert: config.sslCert
+     }
+    */
 })
 
 fastifyServer.register(fastifyStaticPlugin, {
   root: config.staticRootPath
 })
 
+fastifyServer.register(fastifyWebSocketPlugin, {
+  errorHandler: function (error, connection, request, reply) {
+    // Do stuff
+    // destroy/close connection
+    connection.destroy(error)
+  }
+})
+
 fastifyServer.get('*', (request, reply) => {
   return reply.sendFile('index.html')
+})
+
+fastifyServer.route({
+  method: 'GET',
+  url: '/api/stream',
+  handler (request, reply) {
+    return {
+      status: 'success',
+      data: 'Please change protocol to ws'
+    }
+  },
+  wsHandler (connection, request) {
+    /**
+     * ascii | utf8 | utf-8 | utf16le | ucs2 | ucs-2 |
+     * base64 | base64url | latin1 | binary | hex
+     */
+    connection.setEncoding('binary')
+
+    connsection.once('')
+  }
 })
 
 fastifyServer.get('/api/version', async (request, reply) => {
