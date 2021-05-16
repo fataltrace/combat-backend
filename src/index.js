@@ -2,6 +2,7 @@ import fastify from 'fastify'
 import fastifyStaticPlugin from 'fastify-static'
 import fastifyWebSocketPlugin from 'fastify-websocket'
 import config from './config.js'
+import { pingPongHandler, cameraHandler } from './handlers.js'
 
 const fastifyServer = fastify({
     logger: config.logger,
@@ -19,9 +20,10 @@ fastifyServer.register(fastifyStaticPlugin, {
 })
 
 fastifyServer.register(fastifyWebSocketPlugin, {
+  options: {
+    clientTracking: true
+  },  
   errorHandler: function (error, connection, request, reply) {
-    // Do stuff
-    // destroy/close connection
     connection.destroy(error)
   }
 })
@@ -32,7 +34,7 @@ fastifyServer.get('*', (request, reply) => {
 
 fastifyServer.route({
   method: 'GET',
-  url: '/api/stream',
+  url: '/api/camera',
   handler (request, reply) {
     return {
       status: 'success',
@@ -44,9 +46,11 @@ fastifyServer.route({
      * ascii | utf8 | utf-8 | utf16le | ucs2 | ucs-2 |
      * base64 | base64url | latin1 | binary | hex
      */
-    connection.setEncoding('binary')
+    connection.setEncoding('utf8')
+    connection.socket.on('close', () => {})
 
-    connsection.once('')
+    pingPongHandler(connection)
+    cameraHandler(connection)
   }
 })
 
